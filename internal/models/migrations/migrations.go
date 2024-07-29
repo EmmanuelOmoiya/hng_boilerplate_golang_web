@@ -10,8 +10,14 @@ func AuthMigrationModels() []interface{} {
 		models.Profile{},
 		models.Product{},
 		models.User{},
+		models.Invitation{},
+		models.PasswordReset{},
+		models.MagicLink{},
 		models.WaitlistUser{},
 		models.NewsLetter{},
+		models.JobPost{},
+		models.PasswordReset{},
+		models.MagicLink{},
 	} // an array of db models, example: User{}
 }
 

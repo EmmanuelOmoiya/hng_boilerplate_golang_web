@@ -27,7 +27,7 @@ func (base *Controller) CreateUser(c *gin.Context) {
 		req = models.CreateUserRequestModel{}
 	)
 
-	err := c.ShouldBind(&req)
+	err := c.ShouldBindJSON(&req)
 	if err != nil {
 		rd := utility.BuildErrorResponse(http.StatusBadRequest, "error", "Failed to parse request body", err, nil)
 		c.JSON(http.StatusBadRequest, rd)
@@ -57,7 +57,6 @@ func (base *Controller) CreateUser(c *gin.Context) {
 
 	base.Logger.Info("user created successfully")
 	rd := utility.BuildSuccessResponse(http.StatusCreated, "user created successfully", respData)
-
 	c.JSON(code, rd)
 }
 
@@ -164,24 +163,4 @@ func (base *Controller) LogoutUser(c *gin.Context) {
 
 	rd := utility.BuildSuccessResponse(http.StatusOK, "user logout successfully", respData)
 	c.JSON(http.StatusOK, rd)
-}
-
-func (base *Controller) ResetPassword(c *gin.Context) {
-	// to be implemented
-
-}
-
-func (base *Controller) VerifyResetToken(c *gin.Context) {
-	// to be implemented
-
-}
-
-func (base *Controller) RequestMagicLink(c *gin.Context) {
-	// to be implemented
-
-}
-
-func (base *Controller) VerifyMagicLink(c *gin.Context) {
-	// to be implemented
-
 }

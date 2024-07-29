@@ -1,6 +1,7 @@
 package models
 
 import (
+	"errors"
 	"time"
 
 	"gorm.io/gorm"
@@ -37,12 +38,114 @@ type CreateOrgRequestModel struct {
 }
 
 func (c *Organisation) CreateOrganisation(db *gorm.DB) error {
-
 	err := postgresql.CreateOneRecord(db, &c)
-
 	if err != nil {
 		return err
 	}
-
 	return nil
+}
+
+func (c *Organisation) Delete(db *gorm.DB) error {
+	err := postgresql.DeleteRecordFromDb(db, &c)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (c *Organisation) Update(db *gorm.DB) (*Organisation, error) {
+	result, err := postgresql.SaveAllFields(db, c)
+	if err != nil {
+		return nil, err
+	}
+
+	if result.RowsAffected == 0 {
+		return nil, errors.New("failed to update organisation")
+	}
+
+	return c, nil
+}
+
+func (o *Organisation) GetOrgByID(db *gorm.DB, orgID string) (Organisation, error) {
+	var org Organisation
+
+	err, nerr := postgresql.SelectOneFromDb(db, &org, "id = ?", orgID)
+	if nerr != nil {
+		return org, err
+	}
+	return org, nil
+}
+
+func (u *Organisation) GetOrganisationsByUserID(db *gorm.DB, userID string) ([]Organisation, error) {
+	var (
+		ErrNotFound   = errors.New("user not found")
+		organisations = []Organisation{}
+	)
+
+	query := db.Model(&Organisation{}).
+		Joins("INNER JOIN user_organisations uo ON organisations.id = uo.organisation_id").
+		Where("uo.user_id = ?", userID)
+
+	if err := query.Find(&organisations).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return organisations, ErrNotFound
+		}
+		return organisations, err
+	}
+	if len(organisations) == 0 {
+		return organisations, ErrNotFound
+	}
+
+	return organisations, nil
+}
+func (u *Organisation) GetOrganisationsByUserIDs(db *gorm.DB, userID, requesterID string) ([]Organisation, error) {
+
+	var (
+		ErrNotFound   = errors.New("user not in your organisation")
+		organisations = []Organisation{}
+	)
+
+	var isOwner bool
+	err := db.Model(&Organisation{}).
+		Select("count(*) > 0").
+		Where("owner_id = ?", requesterID).
+		Find(&isOwner).
+		Error
+	if err != nil {
+		return nil, err
+	}
+
+	if isOwner {
+
+		query := db.Model(&Organisation{}).
+			Joins("INNER JOIN user_organisations uo ON organisations.id = uo.organisation_id").
+			Where("uo.user_id = ?", userID).
+			Where("organisations.owner_id = ?", requesterID)
+		if err := query.Find(&organisations).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+
+				return organisations, ErrNotFound
+			}
+
+			return organisations, err
+		}
+		if len(organisations) == 0 {
+			return organisations, ErrNotFound
+		}
+
+		return organisations, nil
+	}
+
+	query := db.Model(&Organisation{}).
+		Joins("INNER JOIN user_organisations uo ON organisations.id = uo.organisation_id").
+		Where("uo.user_id = ?", requesterID)
+	if err := query.Find(&organisations).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return organisations, ErrNotFound
+		}
+		return organisations, err
+	}
+
+	return organisations, nil
+
 }
