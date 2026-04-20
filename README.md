@@ -1,4 +1,4 @@
-## hng_boilerplace_golang_web
+## Production Ready Golang API Template with CI/CD Configuration
 
 
 ### Prerequisites
